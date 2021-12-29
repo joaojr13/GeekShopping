@@ -10,11 +10,13 @@ namespace GeekShopping.Web.Controllers
     {
         private readonly IProductsService _productsService;
         private readonly ICartService _cartService;
+        private readonly ICouponService _couponService;
 
-        public CartController(IProductsService productsService, ICartService cartService)
+        public CartController(IProductsService productsService, ICartService cartService, ICouponService couponService)
         {
             _productsService = productsService;
             _cartService = cartService;
+            _couponService = couponService;
         }
 
         [Authorize]
@@ -74,11 +76,22 @@ namespace GeekShopping.Web.Controllers
             var response = await _cartService.FindCartByUserId(userId, token);
 
             if (response?.CartHeader != null)
+            {
+                if (!string.IsNullOrEmpty(response.CartHeader.CouponCode))
+                {
+                    var coupon = await _couponService.GetCoupon(response.CartHeader.CouponCode, token);
+                    if(coupon?.CouponCode != null)
+                    {
+                        response.CartHeader.DiscountTotal = coupon.DiscountAmount;
+                    }
+                }
+
                 foreach (var detail in response.CartDetails)
                 {
                     response.CartHeader.PurchaseAmount += detail.Product.Price * detail.Count;
                 }
-
+                response.CartHeader.PurchaseAmount -= response.CartHeader.DiscountTotal;
+            }
             return response;
         }
     }
