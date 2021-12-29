@@ -4,6 +4,7 @@ using GeekShopping.Product.API.Data.ValueObjects;
 using GeekShopping.Product.API.Models.Context;
 using GeekShopping.Product.API.Repository;
 using GeekShopping.Product.API.Utils;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -22,9 +23,6 @@ builder.Services.AddSingleton(mapper);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IProductsRepository, ProductsRepository>();
 
-//builder.Services.AddControllers();
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -82,44 +80,44 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseHttpsRedirection();
 
-app.MapGet("Products", async (IProductsRepository repository) =>
+app.MapGet("Products", async ([FromServices] IProductsRepository repository) =>
 {
     var products = await repository.FindAll();
     return Results.Ok(products);
-}).RequireAuthorization();
+});
 
-app.MapGet("Products/{id}", async (IProductsRepository repository, long id) =>
+app.MapGet("Products/{id}", async ([FromServices] IProductsRepository repository, long id) =>
 {
     var product = await repository.FindById(id);
     if (product is null) return Results.NotFound();
     return Results.Ok(product);
 }).RequireAuthorization();
 
-app.MapPost("Products", async (IProductsRepository repository, ProductsVO vo) =>
+app.MapPost("Products", async ([FromServices] IProductsRepository repository, ProductsVO vo) =>
 {
     if (vo is null) return Results.BadRequest();
     var product = await repository.Create(vo);
     return Results.Ok(product);
 }).RequireAuthorization();
 
-app.MapPut("Products", async (IProductsRepository repository, ProductsVO vo) =>
+app.MapPut("Products", async ([FromServices] IProductsRepository repository, ProductsVO vo) =>
 {
     if (vo is null) return Results.BadRequest();
     var product = await repository.Update(vo);
     return Results.Ok(product);
 }).RequireAuthorization();
 
-app.MapDelete("Products/{id}", async (IProductsRepository repository, long id) =>
+app.MapDelete("Products/{id}", async ([FromServices] IProductsRepository repository, long id) =>
 {
     var status = await repository.Delete(id);
     if (!status) return Results.BadRequest();
     return Results.Ok(status);
 
-}).RequireAuthorization(Role.Admin);
-
-app.UseAuthentication();
-app.UseAuthorization();
+}).RequireAuthorization("ApiScope");
 //app.MapControllers();
 app.Run();

@@ -7,6 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient<IProductsService, ProductsService>(config =>
    config.BaseAddress = new Uri(builder.Configuration["ServiceUrls:ProductsAPI"])
 );
+
+builder.Services.AddHttpClient<ICartService, CartService>(config =>
+   config.BaseAddress = new Uri(builder.Configuration["ServiceUrls:CartAPI"])
+);
+
+//builder.Services.AddHttpClient<ICouponService, CouponService>(config =>
+//   config.BaseAddress = new Uri(builder.Configuration["ServiceUrls:CouponAPI"])
+//);
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddAuthentication(options =>
 {
@@ -28,6 +37,7 @@ builder.Services.AddAuthentication(options =>
             options.SaveTokens = true;
         }
     );
+
 
 var app = builder.Build();
 

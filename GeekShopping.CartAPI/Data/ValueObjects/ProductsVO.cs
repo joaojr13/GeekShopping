@@ -1,7 +1,8 @@
-﻿namespace GeekShopping.Web.Models
+﻿namespace GeekShopping.CartAPI.Data.ValueObjects
 {
-    public class ProductsModel
+    public class ProductsVO
     {
+
         public long Id { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }
