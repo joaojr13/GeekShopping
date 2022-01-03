@@ -85,34 +85,37 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpsRedirection();
 
-app.MapGet("Products", async ([FromServices] IProductsRepository repository) =>
+
+string basePath = "/api/v1/";
+
+app.MapGet(basePath + "Products", async ([FromServices] IProductsRepository repository) =>
 {
     var products = await repository.FindAll();
     return Results.Ok(products);
 });
 
-app.MapGet("Products/{id}", async ([FromServices] IProductsRepository repository, long id) =>
+app.MapGet(basePath + "Products/{id}", async ([FromServices] IProductsRepository repository, long id) =>
 {
     var product = await repository.FindById(id);
     if (product is null) return Results.NotFound();
     return Results.Ok(product);
 }).RequireAuthorization();
 
-app.MapPost("Products", async ([FromServices] IProductsRepository repository, ProductsVO vo) =>
+app.MapPost(basePath + "Products", async ([FromServices] IProductsRepository repository, ProductsVO vo) =>
 {
     if (vo is null) return Results.BadRequest();
     var product = await repository.Create(vo);
     return Results.Ok(product);
 }).RequireAuthorization();
 
-app.MapPut("Products", async ([FromServices] IProductsRepository repository, ProductsVO vo) =>
+app.MapPut(basePath + "Products", async ([FromServices] IProductsRepository repository, ProductsVO vo) =>
 {
     if (vo is null) return Results.BadRequest();
     var product = await repository.Update(vo);
     return Results.Ok(product);
 }).RequireAuthorization();
 
-app.MapDelete("Products/{id}", async ([FromServices] IProductsRepository repository, long id) =>
+app.MapDelete(basePath + "Products/{id}", async ([FromServices] IProductsRepository repository, long id) =>
 {
     var status = await repository.Delete(id);
     if (!status) return Results.BadRequest();
