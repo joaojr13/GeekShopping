@@ -1,0 +1,21 @@
+{
+  //"CouponAPI": "https://localhost:4450"
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/v1/coupon/{couponCode}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 4450
+        }
+      ],
+      "UpstreamPathTemplate": "/api/v1/coupon/{couponCode}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": [ "geek_shopping" ]
+      }
+    }
+  ]
+}
