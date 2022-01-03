@@ -7,7 +7,7 @@ namespace GeekShopping.Web.Services.IServices
     public class CartService : ICartService
     {
         private readonly HttpClient _httpClient;
-        public const string BasePath = "api/v1/cart";
+        public const string BasePath = "api/v1/Cart";
 
         public CartService(HttpClient client)
         {
@@ -61,9 +61,20 @@ namespace GeekShopping.Web.Services.IServices
             return await response.ReadContentAsync<bool>();
         }
 
-        public Task<CartViewModel> Checkout(CartHeaderViewModel cartHeader, string token)
+        public async Task<object> Checkout(CartHeaderViewModel model, string token)
         {
-            throw new NotImplementedException();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.PostAsJsonAsync($"{BasePath}/checkout", model);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.ReadContentAsync<CartHeaderViewModel>();
+            }
+            else if (response.StatusCode.ToString().Equals("PreconditionFailed"))
+            {
+                return "Coupon Price has changed, please confirm";
+            }
+            else throw new Exception("Something went wrong calling the API");
+            
         }
 
         public Task<bool> ClearCart(string userId, string token)
