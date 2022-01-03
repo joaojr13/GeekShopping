@@ -1,7 +1,9 @@
 using AutoMapper;
 using GeekShopping.CartAPI.Config;
 using GeekShopping.CartAPI.Data.ValueObjects;
+using GeekShopping.CartAPI.Messages;
 using GeekShopping.CartAPI.Models.Context;
+using GeekShopping.CartAPI.RabbitMQSender;
 using GeekShopping.CartAPI.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connection = builder.Configuration["MySqlConnection:MySQLConnectionString"];
 
+builder.Services.AddControllers();
 builder.Services.AddDbContext<MySQLContext>(options => options.
 UseMySql(connection,
 new MySqlServerVersion(
@@ -21,6 +24,11 @@ IMapper mapper = MappingConfig.RegisterMaps().CreateMapper();
 builder.Services.AddSingleton(mapper);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICouponRepository, CouponRepository>();
+builder.Services.AddSingleton<IRabbitMQMessageSender, RabbitMQMessageSender>();
+
+builder.Services.AddHttpClient<ICouponRepository, CouponRepository>(
+    x => x.BaseAddress = new Uri(builder.Configuration["ServiceUrls:CouponAPI"]));
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -82,54 +90,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-string basePath = "api/v1/cart/";
-
-app.MapGet(basePath + "find-cart/{userId}", async ([FromServices]ICartRepository cartRepository, string userId) =>
-{
-    var cart = await cartRepository.FindCartByUserId(userId);
-    if (cart is null) return Results.NotFound();
-    return Results.Ok(cart);
-});
-
-app.MapPost(basePath + "add-cart", async ([FromServices]ICartRepository cartRepository, CartVO vo) =>
-{
-    var cart = await cartRepository.SaveOrUpdateCart(vo);
-    if (cart is null) return Results.NotFound();
-    return Results.Ok(cart);
-});
-
-app.MapPut(basePath + "update-cart", async ([FromServices]ICartRepository cartRepository, CartVO vo) =>
-{
-    var cart = await cartRepository.SaveOrUpdateCart(vo);
-    if (cart is null) return Results.NotFound();
-    return Results.Ok(cart); 
-});
-
-app.MapDelete(basePath + "remove-cart/{id}", async ([FromServices]ICartRepository cartRepository, int id) =>
-{
-    var status = await cartRepository.RemoveFromCart(id);
-    if (!status) return Results.BadRequest();
-    return Results.Ok(status);
-});
-
-app.MapPost(basePath + "apply-coupon", async ([FromServices] ICartRepository cartRepository, CartVO vo) =>
-{
-    var status = await cartRepository.ApplyCoupon(vo.CartHeader.UserId, vo.CartHeader.CouponCode);
-    if (!status) return Results.NotFound();
-    return Results.Ok(status);
-});
-
-app.MapDelete(basePath + "remove-coupon/{userId}", async ([FromServices] ICartRepository cartRepository, string userId) =>
-{
-    var status = await cartRepository.RemoveCoupon(userId);
-    if (!status) return Results.NotFound();
-    return Results.Ok(status);
-});
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpsRedirection();
-
+app.MapControllers();
 
 app.Run();
